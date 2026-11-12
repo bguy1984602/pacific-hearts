@@ -2,7 +2,7 @@
 *{box-sizing:border-box}body{margin:0;background:#fff8fb;color:#33253b;font:16px system-ui}header{padding:25px;background:linear-gradient(120deg,#672e64,#d35380);color:white}h1{font:italic 35px Georgia;margin:0}main{max-width:680px;margin:25px auto;padding:0 15px}.card{border:1px solid #ecd3e1;background:white;border-radius:17px;padding:22px;margin:18px 0;box-shadow:0 3px 12px #5c254011}label{display:block;margin:12px 0;font-weight:600}input,select,textarea{width:100%;padding:12px;border:1px solid #d5bfce;border-radius:8px;font:inherit;margin-top:5px}textarea{min-height:90px}button{background:#ac165e;color:white;border:0;padding:13px 17px;border-radius:9px;font-weight:700;cursor:pointer;margin:6px 4px 6px 0}button:disabled{opacity:.5}a{color:#a20f59}.note{font-size:14px;color:#756674}.error{color:#aa1743}.ok{color:#126d3a}.hidden{display:none}.member{border-top:1px solid #eedde7;padding:12px 0} .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:430px){.two{grid-template-columns:1fr}}</style><link rel="stylesheet" href="profile-photos.css"></head><body>
 <header><h1>♡ Pacific Hearts</h1><div>Free for Filipinas and Americans · <a href="index.html" style="color:white">Homepage</a></div></header><main>
 <p class="note">Pacific Hearts member accounts. Profiles and profile photos are visible to signed-in members.</p>
-<section class="card" id="authBox"><h2>Create an account / Sign in</h2><label>Email<input id="email" type="email" autocomplete="email"></label><label>Password<input id="password" type="password" autocomplete="new-password" minlength="8"></label><button id="signup" type="button">Create account</button><button id="signin" type="button">Sign in</button><button id="resend" type="button">Resend confirmation email</button><p id="authStatus" role="status" aria-live="polite"></p><p class="note">Supabase may require you to confirm your email before signing in. Never send passwords to anyone.</p></section>
+<section class="card" id="authBox"><h2 id="authHeading">Create an account / Sign in</h2><label>Email<input id="email" type="email" autocomplete="email"></label><label>Password<input id="password" type="password" autocomplete="new-password" minlength="8"></label><button id="signup" type="button">Create account</button><button id="signin" type="button">Sign in</button><button id="resend" type="button">Resend confirmation email</button><p id="authStatus" role="status" aria-live="polite"></p><p class="note">Supabase may require you to confirm your email before signing in. Never send passwords to anyone.</p></section>
 <section class="card hidden" id="memberBox"><h2>Your member profile</h2><p id="who"></p><button id="signout">Sign out</button>
 <form id="profileForm"><div class="two"><label>Display name<input name="display_name" maxlength="60" required></label><label>Age (18+)<input name="age" type="number" min="18" max="120" required></label>
 <label>Country<select name="country"><option>Philippines</option><option>United States</option></select></label><label>City<input name="city" maxlength="80"></label>
@@ -26,6 +26,17 @@
 <div id="memberDetails"></div>
 </dialog>
 </main>
+<script>
+const accountMode = new URLSearchParams(location.search).get("mode");
+const authHeading = document.getElementById("authHeading");
+if (accountMode === "signin") {
+  authHeading.textContent = "Sign in to Pacific Hearts";
+  document.getElementById("password").autocomplete = "current-password";
+  document.getElementById("signup").before(document.getElementById("signin"));
+} else if (accountMode === "signup") {
+  authHeading.textContent = "Create your Pacific Hearts account";
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="profile-photos.js"></script>
 <script>
