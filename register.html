@@ -1,22 +1,75 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pacific Hearts — Member Accounts</title><style>
-*{box-sizing:border-box}body{margin:0;background:#fff8fb;color:#33253b;font:16px system-ui}header{padding:25px;background:linear-gradient(120deg,#672e64,#d35380);color:white}h1{font:italic 35px Georgia;margin:0}main{max-width:680px;margin:25px auto;padding:0 15px}.card{border:1px solid #ecd3e1;background:white;border-radius:17px;padding:22px;margin:18px 0;box-shadow:0 3px 12px #5c254011}label{display:block;margin:12px 0;font-weight:600}input,select,textarea{width:100%;padding:12px;border:1px solid #d5bfce;border-radius:8px;font:inherit;margin-top:5px}textarea{min-height:90px}button{background:#ac165e;color:white;border:0;padding:13px 17px;border-radius:9px;font-weight:700;cursor:pointer;margin:6px 4px 6px 0}button:disabled{opacity:.5}a{color:#a20f59}.note{font-size:14px;color:#756674}.error{color:#aa1743}.ok{color:#126d3a}.hidden{display:none}.member{border-top:1px solid #eedde7;padding:12px 0} .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:430px){.two{grid-template-columns:1fr}}</style></head><body>
+*{box-sizing:border-box}body{margin:0;background:#fff8fb;color:#33253b;font:16px system-ui}header{padding:25px;background:linear-gradient(120deg,#672e64,#d35380);color:white}h1{font:italic 35px Georgia;margin:0}main{max-width:680px;margin:25px auto;padding:0 15px}.card{border:1px solid #ecd3e1;background:white;border-radius:17px;padding:22px;margin:18px 0;box-shadow:0 3px 12px #5c254011}label{display:block;margin:12px 0;font-weight:600}input,select,textarea{width:100%;padding:12px;border:1px solid #d5bfce;border-radius:8px;font:inherit;margin-top:5px}textarea{min-height:90px}button{background:#ac165e;color:white;border:0;padding:13px 17px;border-radius:9px;font-weight:700;cursor:pointer;margin:6px 4px 6px 0}button:disabled{opacity:.5}a{color:#a20f59}.note{font-size:14px;color:#756674}.error{color:#aa1743}.ok{color:#126d3a}.hidden{display:none}.member{border-top:1px solid #eedde7;padding:12px 0} .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:430px){.two{grid-template-columns:1fr}}</style><link rel="stylesheet" href="profile-photos.css"></head><body>
 <header><h1>♡ Pacific Hearts</h1><div>Free for Filipinas and Americans · <a href="index.html" style="color:white">Homepage</a></div></header><main>
-<p class="note">Real Supabase accounts and profiles. This is a development build, not a publicly launched dating service. Do not upload photos or share sensitive details yet.</p>
+<p class="note">Pacific Hearts member accounts. Profiles and profile photos are visible to signed-in members.</p>
 <section class="card" id="authBox"><h2>Create an account / Sign in</h2><label>Email<input id="email" type="email" autocomplete="email"></label><label>Password<input id="password" type="password" autocomplete="new-password" minlength="8"></label><button id="signup" type="button">Create account</button><button id="signin" type="button">Sign in</button><button id="resend" type="button">Resend confirmation email</button><p id="authStatus" role="status" aria-live="polite"></p><p class="note">Supabase may require you to confirm your email before signing in. Never send passwords to anyone.</p></section>
 <section class="card hidden" id="memberBox"><h2>Your member profile</h2><p id="who"></p><button id="signout">Sign out</button>
 <form id="profileForm"><div class="two"><label>Display name<input name="display_name" maxlength="60" required></label><label>Age (18+)<input name="age" type="number" min="18" max="120" required></label>
 <label>Country<select name="country"><option>Philippines</option><option>United States</option></select></label><label>City<input name="city" maxlength="80"></label>
 <label>Children<select name="has_children"><option value="">Prefer not to say</option><option value="false">No</option><option value="true">Yes</option></select></label><label>Relationship goal<select name="relationship_goal"><option>Long-term relationship</option><option>Marriage</option><option>Friendship</option></select></label></div>
-<label>About me<textarea name="about_me" maxlength="1000"></textarea></label><button type="submit">Save profile</button><p id="profileStatus" role="status"></p></form></section>
-<section class="card hidden" id="searchBox"><h2>Search real member profiles</h2><p class="note">Only registered and signed-in users can view profiles. No verification badges.</p><div class="two"><label>Country<select id="filterCountry"><option value="">Any</option><option>Philippines</option><option>United States</option></select></label><label>Children<select id="filterChildren"><option value="">Any</option><option value="false">Without children</option><option value="true">With children</option></select></label><label>Minimum age<input id="minAge" type="number" value="18" min="18" max="120"></label><label>Maximum age<input id="maxAge" type="number" value="45" min="18" max="120"></label></div><button id="search">Search members</button><div id="results"></div></section>
+<label>About me<textarea name="about_me" maxlength="1000"></textarea></label><button type="submit">Save profile</button><p id="profileStatus" role="status"></p></form>
+<section id="photoPanel" aria-labelledby="photoHeading">
+<h3 id="photoHeading">Profile photos</h3>
+<p class="note">Add up to five photos. Your primary photo appears in search results. Choose photos you have permission to share. Nudity is prohibited.</p>
+<div class="photo-toolbar">
+<button id="addPhoto" type="button" disabled>Add photo</button>
+<input id="photoFile" type="file" accept="image/*" hidden>
+<p id="photoCount"></p>
+</div>
+<p id="photoStatus" role="status"></p>
+<div id="ownPhotos" class="photo-grid"></div>
+</section></section>
+<section class="card hidden" id="searchBox"><h2>Search real member profiles</h2><p class="note">Only registered and signed-in users can view profiles. No verification badges.</p><div class="two"><label>Country<select id="filterCountry"><option value="">Any</option><option>Philippines</option><option>United States</option></select></label><label>Children<select id="filterChildren"><option value="">Any</option><option value="false">Without children</option><option value="true">With children</option></select></label><label>Minimum age<input id="minAge" type="number" value="18" min="18" max="120"></label><label>Maximum age<input id="maxAge" type="number" value="45" min="18" max="120"></label></div><button id="search">Search members</button><p id="searchStatus" role="status"></p><div id="results"></div></section>
+<dialog id="memberProfile" class="member-dialog" aria-labelledby="memberName">
+<button type="button" id="closeMemberProfile">Close profile</button>
+<h2 id="memberName"></h2>
+<div id="memberDetails"></div>
+</dialog>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="profile-photos.js"></script>
 <script>
 const client=window.supabase.createClient("https://oydhphpbcsiedfkkwujq.supabase.co","sb_publishable_HjB_yE3s66LO8FsS4n2iGw_Jh73wk-m");
 const $=id=>document.getElementById(id),status=(id,msg,bad=false)=>{let x=$(id);x.textContent=msg;x.className=bad?"error":"ok"};
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-async function refresh(){let {data:{user},error}=await client.auth.getUser();$("authBox").classList.toggle("hidden",!!user);$("memberBox").classList.toggle("hidden",!user);$("searchBox").classList.toggle("hidden",!user);if(!user)return;$("who").textContent="Signed in as "+user.email;
-let {data,error:e}=await client.from("profiles").select("*").eq("id",user.id).maybeSingle();if(e){status("profileStatus",e.message,true);return}if(data){for(let [k,v] of Object.entries(data)){let el=$("profileForm").elements.namedItem(k);if(el)el.value=k==="has_children"?(v===null?"":String(v)):(v??"")}}}
+const profilePhotos = setupProfilePhotos(client);
+let currentMember = null;
+let authRequest = 0;
+let searchRequest = 0;
+
+async function refresh() {
+  const request = ++authRequest;
+  const { data: { user } } = await client.auth.getUser();
+  if (request !== authRequest) return;
+  const id = user?.id ?? null;
+  if (id !== currentMember) {
+    ++searchRequest;
+    currentMember = id;
+    profilePhotos.setMember(null, false);
+    $("results").replaceChildren();
+    $("searchStatus").textContent = "";
+    $("search").disabled = false;
+    $("profileForm").reset();
+    $("profileStatus").textContent = "";
+  }
+  $("authBox").classList.toggle("hidden", !!user);
+  $("memberBox").classList.toggle("hidden", !user);
+  $("searchBox").classList.toggle("hidden", !user);
+  if (!user) return;
+  $("who").textContent = "Signed in as " + user.email;
+  const { data, error } = await client.from("profiles").select("*").eq("id", id).maybeSingle();
+  if (request !== authRequest) return;
+  if (error) {
+    status("profileStatus", error.message, true);
+    return;
+  }
+  if (data) {
+    for (const [name, value] of Object.entries(data)) {
+      const input = $("profileForm").elements.namedItem(name);
+      if (input) input.value = value ?? "";
+    }
+  }
+  profilePhotos.setMember(id, !!data);
+}
 let signupPending=false;
 $("signup").onclick=async()=>{
   if(signupPending)return;
@@ -54,7 +107,82 @@ $("resend").onclick=async()=>{
   finally{$("resend").disabled=false}
 };
 $("signout").onclick=async()=>{await client.auth.signOut();await refresh()};
-$("profileForm").onsubmit=async e=>{e.preventDefault();let {data:{user}}=await client.auth.getUser();if(!user)return;let p=Object.fromEntries(new FormData(e.target));p.id=user.id;p.age=Number(p.age);p.has_children=p.has_children===""?null:p.has_children==="true";let {error}=await client.from("profiles").upsert(p,{onConflict:"id"});status("profileStatus",error?error.message:"Profile saved to Supabase.",!!error)};
-$("search").onclick=async()=>{let min=Number($("minAge").value)||18,max=Number($("maxAge").value)||120;if(min>max){$("results").textContent="Minimum age must be no greater than maximum age.";return}let q=client.from("profiles").select("display_name,age,country,city,has_children,relationship_goal,about_me").gte("age",min).lte("age",max).limit(50);if($("filterCountry").value)q=q.eq("country",$("filterCountry").value);if($("filterChildren").value)q=q.eq("has_children",$("filterChildren").value==="true");let {data,error}=await q;let el=$("results");if(error){el.textContent=error.message;return}el.innerHTML=data.length?data.map(m=>`<div class="member"><b>${esc(m.display_name)}, ${m.age}</b><p>${esc(m.city)}, ${esc(m.country)}</p><p>Children: ${m.has_children===null?"Not specified":m.has_children?"Yes":"No"} · ${esc(m.relationship_goal)}</p><p>${esc(m.about_me)}</p></div>`).join(""):"No profiles match yet."};
-client.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh();
+$("profileForm").onsubmit = async event => {
+  event.preventDefault();
+  const id = currentMember;
+  if (!id) return;
+  const profile = Object.fromEntries(new FormData(event.target));
+  profile.id = id;
+  profile.age = Number(profile.age);
+  profile.has_children = profile.has_children === "" ? null : profile.has_children === "true";
+  const { error } = await client.from("profiles").upsert(profile, { onConflict: "id" });
+  if (id !== currentMember) return;
+  status("profileStatus", error ? error.message : "Profile saved to Supabase.", !!error);
+  if (!error) profilePhotos.setMember(id, true);
+};
+
+$("search").onclick = async () => {
+  const request = ++searchRequest;
+  const min = Number($("minAge").value) || 18;
+  const max = Number($("maxAge").value) || 120;
+  const results = $("results");
+  if (min > max) {
+    results.replaceChildren();
+    status("searchStatus", "Minimum age must be no greater than maximum age.", true);
+    return;
+  }
+  $("search").disabled = true;
+  results.replaceChildren();
+  $("searchStatus").textContent = "Searching members…";
+  try {
+    let query = client.from("profiles")
+      .select("id,display_name,age,country,city,has_children,relationship_goal,about_me")
+      .gte("age", min).lte("age", max).limit(50);
+    if ($("filterCountry").value) query = query.eq("country", $("filterCountry").value);
+    if ($("filterChildren").value) query = query.eq("has_children", $("filterChildren").value === "true");
+    const { data, error } = await query;
+    if (request !== searchRequest) return;
+    if (error) throw error;
+    $("searchStatus").textContent = data.length ? "" : "No profiles match yet.";
+    const cards = data.map(member => {
+      const article = document.createElement("article");
+      article.className = "member member-with-photo";
+      const info = document.createElement("div");
+      const name = document.createElement("b");
+      name.textContent = member.display_name + ", " + member.age;
+      const details = document.createElement("div");
+      const children = member.has_children === null ? "Not specified" : member.has_children ? "Yes" : "No";
+      for (const text of [
+        [member.city, member.country].filter(Boolean).join(", "),
+        "Children: " + children + " · " + (member.relationship_goal ?? ""),
+        member.about_me
+      ]) {
+        if (!text) continue;
+        const paragraph = document.createElement("p");
+        paragraph.textContent = text;
+        details.append(paragraph);
+      }
+      const card = profilePhotos.searchCard(member, details);
+      info.append(name, details, card.open);
+      article.append(card.thumbnail, info);
+      results.append(article);
+      return card;
+    });
+    try {
+      await profilePhotos.showSearchPhotos(cards);
+    } catch {
+      if (request === searchRequest) status("searchStatus", "Profiles loaded. Photos could not load.", true);
+    }
+  } catch (error) {
+    if (request === searchRequest) status("searchStatus", error.message || "Member search could not complete.", true);
+  } finally {
+    if (request === searchRequest) $("search").disabled = false;
+  }
+};
+client.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_OUT" || (event === "SIGNED_IN" && session?.user.id !== currentMember)) {
+    setTimeout(refresh, 0);
+  }
+});
+refresh();
 </script></body></html>
