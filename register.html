@@ -2,7 +2,7 @@
 *{box-sizing:border-box}body{margin:0;background:#fff8fb;color:#33253b;font:16px system-ui}header{padding:25px;background:linear-gradient(120deg,#672e64,#d35380);color:white}h1{font:italic 35px Georgia;margin:0}main{max-width:680px;margin:25px auto;padding:0 15px}.card{border:1px solid #ecd3e1;background:white;border-radius:17px;padding:22px;margin:18px 0;box-shadow:0 3px 12px #5c254011}label{display:block;margin:12px 0;font-weight:600}input,select,textarea{width:100%;padding:12px;border:1px solid #d5bfce;border-radius:8px;font:inherit;margin-top:5px}textarea{min-height:90px}button{background:#ac165e;color:white;border:0;padding:13px 17px;border-radius:9px;font-weight:700;cursor:pointer;margin:6px 4px 6px 0}button:disabled{opacity:.5}a{color:#a20f59}.note{font-size:14px;color:#756674}.error{color:#aa1743}.ok{color:#126d3a}.hidden{display:none}.member{border-top:1px solid #eedde7;padding:12px 0} .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:430px){.two{grid-template-columns:1fr}}</style></head><body>
 <header><h1>♡ Pacific Hearts</h1><div>Free for Filipinas and Americans · <a href="index.html" style="color:white">Homepage</a></div></header><main>
 <p class="note">Real Supabase accounts and profiles. This is a development build, not a publicly launched dating service. Do not upload photos or share sensitive details yet.</p>
-<section class="card" id="authBox"><h2>Create an account / Sign in</h2><label>Email<input id="email" type="email" autocomplete="email"></label><label>Password<input id="password" type="password" autocomplete="new-password" minlength="8"></label><button id="signup">Create account</button><button id="signin">Sign in</button><p id="authStatus" role="status"></p><p class="note">Supabase may require you to confirm your email before signing in. Never send passwords to anyone.</p></section>
+<section class="card" id="authBox"><h2>Create an account / Sign in</h2><label>Email<input id="email" type="email" autocomplete="email"></label><label>Password<input id="password" type="password" autocomplete="new-password" minlength="8"></label><button id="signup" type="button">Create account</button><button id="signin" type="button">Sign in</button><button id="resend" type="button">Resend confirmation email</button><p id="authStatus" role="status" aria-live="polite"></p><p class="note">Supabase may require you to confirm your email before signing in. Never send passwords to anyone.</p></section>
 <section class="card hidden" id="memberBox"><h2>Your member profile</h2><p id="who"></p><button id="signout">Sign out</button>
 <form id="profileForm"><div class="two"><label>Display name<input name="display_name" maxlength="60" required></label><label>Age (18+)<input name="age" type="number" min="18" max="120" required></label>
 <label>Country<select name="country"><option>Philippines</option><option>United States</option></select></label><label>City<input name="city" maxlength="80"></label>
@@ -17,8 +17,42 @@ const $=id=>document.getElementById(id),status=(id,msg,bad=false)=>{let x=$(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function refresh(){let {data:{user},error}=await client.auth.getUser();$("authBox").classList.toggle("hidden",!!user);$("memberBox").classList.toggle("hidden",!user);$("searchBox").classList.toggle("hidden",!user);if(!user)return;$("who").textContent="Signed in as "+user.email;
 let {data,error:e}=await client.from("profiles").select("*").eq("id",user.id).maybeSingle();if(e){status("profileStatus",e.message,true);return}if(data){for(let [k,v] of Object.entries(data)){let el=$("profileForm").elements.namedItem(k);if(el)el.value=k==="has_children"?(v===null?"":String(v)):(v??"")}}}
-$("signup").onclick=async()=>{let email=$("email").value.trim(),password=$("password").value;if(!email||password.length<8){status("authStatus","Enter an email and password of at least 8 characters.",true);return}let {data,error}=await client.auth.signUp({email,password});status("authStatus",error?error.message:"Account request submitted. Check your email for a confirmation link if required.",!!error);await refresh()};
-$("signin").onclick=async()=>{let {error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});status("authStatus",error?error.message:"Signed in.",!!error);await refresh()};
+let signupPending=false;
+$("signup").onclick=async()=>{
+  if(signupPending)return;
+  const email=$("email").value.trim(),password=$("password").value;
+  if(!email||!$("email").checkValidity()||password.length<8){status("authStatus","Enter a valid email and a password of at least 8 characters.",true);return}
+  signupPending=true;$("signup").disabled=true;$("signup").textContent="Creating account…";
+  status("authStatus","Submitting registration…");
+  try{
+    const {data,error}=await client.auth.signUp({email,password,emailRedirectTo:location.origin+location.pathname});
+    if(error){status("authStatus",error.message,true);return}
+    status("authStatus",data?.session?"Account created and signed in.":"Registration submitted. If confirmation is required, check your email (including spam), then sign in.");
+    await refresh();
+  }catch(e){status("authStatus","Registration could not complete: "+(e?.message||"Network error"),true)}
+  finally{signupPending=false;$("signup").disabled=false;$("signup").textContent="Create account"}
+};
+$("signin").onclick=async()=>{
+  const email=$("email").value.trim(),password=$("password").value;
+  if(!email||!password){status("authStatus","Enter your email and password.",true);return}
+  $("signin").disabled=true;status("authStatus","Signing in…");
+  try{
+    const {error}=await client.auth.signInWithPassword({email,password});
+    status("authStatus",error?error.message:"Signed in.",!!error);
+    if(!error)await refresh();
+  }catch(e){status("authStatus","Sign-in failed: "+(e?.message||"Network error"),true)}
+  finally{$("signin").disabled=false}
+};
+$("resend").onclick=async()=>{
+  const email=$("email").value.trim();
+  if(!email||!$("email").checkValidity()){status("authStatus","Enter a valid email address to resend confirmation.",true);return}
+  $("resend").disabled=true;status("authStatus","Requesting confirmation email…");
+  try{
+    const {error}=await client.auth.resend({type:"signup",email,options:{emailRedirectTo:location.origin+location.pathname}});
+    status("authStatus",error?error.message:"If this account needs confirmation, a new email has been requested. Check your inbox and spam folder.",!!error);
+  }catch(e){status("authStatus","Unable to request email: "+(e?.message||"Network error"),true)}
+  finally{$("resend").disabled=false}
+};
 $("signout").onclick=async()=>{await client.auth.signOut();await refresh()};
 $("profileForm").onsubmit=async e=>{e.preventDefault();let {data:{user}}=await client.auth.getUser();if(!user)return;let p=Object.fromEntries(new FormData(e.target));p.id=user.id;p.age=Number(p.age);p.has_children=p.has_children===""?null:p.has_children==="true";let {error}=await client.from("profiles").upsert(p,{onConflict:"id"});status("profileStatus",error?error.message:"Profile saved to Supabase.",!!error)};
 $("search").onclick=async()=>{let min=Number($("minAge").value)||18,max=Number($("maxAge").value)||120;if(min>max){$("results").textContent="Minimum age must be no greater than maximum age.";return}let q=client.from("profiles").select("display_name,age,country,city,has_children,relationship_goal,about_me").gte("age",min).lte("age",max).limit(50);if($("filterCountry").value)q=q.eq("country",$("filterCountry").value);if($("filterChildren").value)q=q.eq("has_children",$("filterChildren").value==="true");let {data,error}=await q;let el=$("results");if(error){el.textContent=error.message;return}el.innerHTML=data.length?data.map(m=>`<div class="member"><b>${esc(m.display_name)}, ${m.age}</b><p>${esc(m.city)}, ${esc(m.country)}</p><p>Children: ${m.has_children===null?"Not specified":m.has_children?"Yes":"No"} · ${esc(m.relationship_goal)}</p><p>${esc(m.about_me)}</p></div>`).join(""):"No profiles match yet."};
