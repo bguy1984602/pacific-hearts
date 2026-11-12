@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Messages — Pacific Hearts</title>
+  <link rel="stylesheet" href="messages.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script defer src="messages.js"></script>
+</head>
+<body>
+  <header class="site-header"><a href="index.html">♡ Pacific Hearts</a></header>
+  <main>
+    <nav aria-label="Member navigation">
+      <a href="register.html">Member profiles</a>
+      <a href="messages.html" id="back-to-inbox" hidden>Back to inbox</a>
+    </nav>
+    <h1>Messages</h1>
+    <p id="connection-status" role="status">Checking your sign-in…</p>
+    <p id="action-status" role="status"></p>
+    <a href="register.html?mode=signin" id="sign-in" hidden>Sign in to Pacific Hearts</a>
+    <section id="inbox" aria-label="Inbox" hidden>
+      <ul id="conversations"></ul>
+      <button type="button" id="more-conversations" hidden>Show older conversations</button>
+    </section>
+    <section id="thread" aria-labelledby="thread-name" hidden>
+      <div class="thread-header">
+        <h2 id="thread-name"></h2>
+        <button type="button" id="block" class="secondary" disabled>Block member</button>
+      </div>
+      <div id="history" tabindex="0" aria-label="Conversation history">
+        <button type="button" id="older" class="secondary" hidden>Load older messages</button>
+        <p id="empty-thread" hidden>No messages yet.</p>
+        <ol id="message-list" aria-label="Messages"></ol>
+      </div>
+      <form id="composer" hidden>
+        <label for="message-text">Write a message</label>
+        <textarea id="message-text" rows="2" maxlength="2000" required></textarea>
+        <button id="send" type="submit">Send message</button>
+      </form>
+    </section>
+  </main>
+  <dialog id="report-dialog" aria-labelledby="report-heading">
+    <form id="report-form">
+      <h2 id="report-heading">Report message</h2>
+      <p>The site owner can review the message you report.</p>
+      <label for="report-reason">Reason</label>
+      <select id="report-reason" required>
+        <option value="">Choose a reason</option>
+        <option value="harassment">Harassment</option>
+        <option value="spam_or_scam">Spam or scam</option>
+        <option value="inappropriate_content">Inappropriate content</option>
+        <option value="other">Other</option>
+      </select>
+      <p id="report-status" role="status"></p>
+      <button type="submit" id="submit-report">Submit report</button>
+      <button type="button" id="cancel-report" class="secondary">Cancel</button>
+    </form>
+  </dialog>
+</body>
+</html>

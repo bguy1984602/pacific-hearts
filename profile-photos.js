@@ -255,6 +255,12 @@ function setupProfilePhotos(client) {
     pictures.className = "member-gallery";
     pictures.textContent = "Loading photos…";
     dialogBody.replaceChildren(pictures, details.cloneNode(true));
+    if (memberId && member.id !== memberId) {
+      const messageLink = document.createElement("a");
+      messageLink.href = "messages.html?" + new URLSearchParams({ member: member.id });
+      messageLink.textContent = "Message " + member.display_name;
+      dialogBody.prepend(messageLink);
+    }
     profileDialog.showModal();
     try {
       const rows = await list([member.id]);
