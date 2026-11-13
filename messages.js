@@ -41,6 +41,7 @@ function showStatus(element, message, error = false) {
 
 function errorText(error, fallback) {
   switch (error?.message) {
+    case "PH_ACCOUNT_RESTRICTED": return "This session cannot access Pacific Hearts.";
     case "PH_PROFILE_REQUIRED": return "Save your member profile before using messages.";
     case "PH_MESSAGING_UNAVAILABLE": return "Messaging with this member is unavailable.";
     case "PH_INVALID_MESSAGE": return "Enter a message of 1 to 2,000 characters.";
@@ -252,6 +253,12 @@ async function refresh() {
   if (refreshing) return;
   refreshing = true;
   try {
+    const allowed = await result(client.rpc("ph_member_access_allowed"));
+    if (stopped) return;
+    if (!allowed) {
+      stop("This session cannot access Pacific Hearts. Sign in again if your account has been restored.", true);
+      return;
+    }
     while (refreshPending && !stopped && !document.hidden) {
       refreshPending = false;
       if (peer) await refreshThread();
@@ -323,6 +330,12 @@ async function start() {
     peer = requestedPeer.toLowerCase();
   }
   try {
+    const allowed = await result(client.rpc("ph_member_access_allowed"));
+    if (stopped) return;
+    if (!allowed) {
+      stop("This session cannot access Pacific Hearts. Sign in again if your account has been restored.", true);
+      return;
+    }
     const ids = peer ? [member, peer] : [member];
     const profiles = await result(client.from("profiles").select("id,display_name").in("id", ids).gte("age", 18));
     if (stopped) return;

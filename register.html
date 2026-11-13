@@ -63,8 +63,18 @@ let searchRequest = 0;
 async function refresh() {
   if (recovering) return;
   const request = ++authRequest;
-  const { data: { user } } = await client.auth.getUser();
+  let { data: { user } } = await client.auth.getUser();
   if (recovering || request !== authRequest) return;
+  if (user) {
+    const access = await client.rpc("ph_member_access_allowed");
+    if (recovering || request !== authRequest) return;
+    if (access.error || !access.data) {
+      user = null;
+      status("authStatus", access.error
+        ? "Account access could not be checked. Reload and try again."
+        : "This session cannot access Pacific Hearts. Sign in again if your account has been restored.", true);
+    }
+  }
   const id = user?.id ?? null;
   if (id !== currentMember) {
     ++searchRequest;

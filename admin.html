@@ -1,4 +1,79 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Pacific Hearts Administration</title><style>
-*{box-sizing:border-box}body{margin:0;font:16px system-ui;background:#fff8fb;color:#35253a}header{padding:22px;background:linear-gradient(110deg,#51214c,#ac2d69);color:white}header h1{font:italic 32px Georgia;margin:0}header a{color:white}main{max-width:900px;margin:auto;padding:16px}.panel{padding:20px;background:white;border:1px solid #ead4e2;border-radius:15px;margin:14px 0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#fff1f7;padding:14px;border-radius:12px}.stat b{display:block;font-size:27px}button{background:#a60e59;color:white;border:0;border-radius:8px;padding:12px;font:inherit;cursor:pointer}button:disabled{opacity:.5}select,textarea{width:100%;font:inherit;padding:10px;border:1px solid #d4c1ce;border-radius:8px;margin:6px 0}textarea{min-height:65px}.case{border-top:1px solid #eee;padding:15px 0}.muted{color:#6d606b}[hidden]{display:none!important}@media(max-width:520px){.stats{grid-template-columns:1fr}}</style></head><body><header><h1>♡ Pacific Hearts</h1><p>Private administration · <a href="index.html">Homepage</a></p></header><main><section class="panel"><h2>Administration</h2><p id="status" role="status">Checking access…</p><button id="refresh">Refresh</button></section><div id="dashboard" hidden><div class="stats"><div class="stat">Profiles<b id="profiles"></b></div><div class="stat">Messages<b id="messages"></b></div><div class="stat">Open cases<b id="open_cases"></b></div></div><section class="panel"><h2>Moderation queue</h2><p class="muted">Review reports and record decisions. Saving a decision does not automatically delete content or suspend a member.</p><div id="cases"></div></section></div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
-(()=>{'use strict';const $=id=>document.getElementById(id),client=supabase.createClient('https://oydhphpbcsiedfkkwujq.supabase.co','sb_publishable_HjB_yE3s66LO8FsS4n2iGw_Jh73wk-m');function node(tag,text){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e}async function load(){ $('dashboard').hidden=true;$('status').textContent='Checking access…';try{const {data:{user},error:authError}=await client.auth.getUser();if(authError||!user){$('status').replaceChildren(node('span','Sign in first: '));const a=node('a','Member sign in');a.href='register.html?mode=signin';$('status').append(a);return}const {data,error}=await client.rpc('ph_admin_dashboard');if(error){$('status').textContent=error.code==='42501'?'This account does not have administrator access.':error.message;return}for(const key of ['profiles','messages','open_cases'])$(key).textContent=data[key];const list=$('cases');list.replaceChildren();if(!data.cases.length)list.append(node('p','No moderation cases.'));for(const c of data.cases){const box=node('section');box.className='case';box.append(node('h3','Case #'+c.id+' — '+c.source),node('p','Reason: '+c.reason+' · '+new Date(c.created_at).toLocaleString()));const choice=node('select');choice.setAttribute('aria-label','Case status');for(const s of ['open','reviewing','resolved','dismissed']){const opt=node('option',s);opt.value=s;opt.selected=c.status===s;choice.append(opt)}const notes=node('textarea');notes.value=c.notes||'';notes.maxLength=2000;notes.setAttribute('aria-label','Private case notes');const save=node('button','Save decision'),msg=node('p');msg.setAttribute('role','status');save.onclick=async()=>{save.disabled=true;const {error}=await client.rpc('ph_admin_review_case',{p_case_id:c.id,p_status:choice.value,p_notes:notes.value});msg.textContent=error?error.message:'Saved.';save.disabled=false;if(!error)await load()};box.append(choice,notes,save,msg);list.append(box)}$('dashboard').hidden=false;$('status').textContent='Administrator access verified.'}catch(e){$('status').textContent=e.message||'Connection error'}}$('refresh').onclick=load;load()})();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Pacific Hearts Administration</title>
+  <link rel="stylesheet" href="admin.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script defer src="admin.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div><strong>♡ Pacific Hearts</strong><a href="index.html">Homepage</a></div>
+  </header>
+  <main>
+    <div class="page-heading">
+      <h1>Administration</h1>
+      <button id="refresh" type="button" class="secondary">Refresh</button>
+    </div>
+    <p id="access-status" role="status">Checking access…</p>
+    <a href="register.html?mode=signin" id="sign-in" hidden>Sign in to Pacific Hearts</a>
+    <div id="dashboard" hidden>
+      <dl class="stats">
+        <div><dt>Profiles</dt><dd id="profiles"></dd></div>
+        <div><dt>Messages</dt><dd id="messages"></dd></div>
+        <div><dt>Open cases</dt><dd id="open_cases"></dd></div>
+      </dl>
+      <nav aria-label="Administration sections">
+        <button id="members-tab" type="button" aria-pressed="true">Members</button>
+        <button id="reports-tab" type="button" aria-pressed="false">Reports</button>
+      </nav>
+      <section class="panel" id="members-panel" aria-labelledby="members-title">
+        <h2 id="members-title">Members</h2>
+        <form id="member-search" class="filters">
+          <label>Search members
+            <input id="search-term" type="search" maxlength="150" placeholder="Name, email, or member ID">
+          </label>
+          <label>Account status
+            <select id="member-filter">
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="banned">Banned</option>
+            </select>
+          </label>
+          <button type="submit">Search</button>
+        </form>
+        <p id="member-status" role="status"></p>
+        <ul id="member-list" class="member-list"></ul>
+        <button id="more-members" class="secondary" type="button" hidden>Show more members</button>
+      </section>
+      <section class="panel" id="reports-panel" aria-labelledby="reports-title" hidden>
+        <h2 id="reports-title">Moderation reports</h2>
+        <label>Report status
+          <select id="case-filter">
+            <option value="all">All statuses</option>
+            <option value="open">Open</option>
+            <option value="reviewing">Reviewing</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+        </label>
+        <p id="case-status" role="status"></p>
+        <div id="case-list"></div>
+        <button id="more-cases" class="secondary" type="button" hidden>Show more reports</button>
+      </section>
+    </div>
+  </main>
+  <dialog id="member-dialog" aria-labelledby="detail-title">
+    <div class="dialog-heading">
+      <h2 id="detail-title">Member details</h2>
+      <form method="dialog"><button type="submit" class="secondary" autofocus>Close</button></form>
+    </div>
+    <p id="detail-status" role="status"></p>
+    <div id="member-detail"></div>
+  </dialog>
+</body>
+</html>
