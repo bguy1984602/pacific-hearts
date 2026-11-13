@@ -1,8 +1,18 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pacific Hearts — Member Accounts</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Pacific Hearts — Member Accounts</title><style>
 *{box-sizing:border-box}body{margin:0;background:#fff8fb;color:#33253b;font:16px system-ui}header{padding:25px;background:linear-gradient(120deg,#672e64,#d35380);color:white}h1{font:italic 35px Georgia;margin:0}main{max-width:680px;margin:25px auto;padding:0 15px}.card{border:1px solid #ecd3e1;background:white;border-radius:17px;padding:22px;margin:18px 0;box-shadow:0 3px 12px #5c254011}label{display:block;margin:12px 0;font-weight:600}input,select,textarea{width:100%;padding:12px;border:1px solid #d5bfce;border-radius:8px;font:inherit;margin-top:5px}textarea{min-height:90px}button{background:#ac165e;color:white;border:0;padding:13px 17px;border-radius:9px;font-weight:700;cursor:pointer;margin:6px 4px 6px 0}button:disabled{opacity:.5}a{color:#a20f59}.note{font-size:14px;color:#756674}.error{color:#aa1743}.ok{color:#126d3a}.hidden{display:none}.member{border-top:1px solid #eedde7;padding:12px 0} .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:430px){.two{grid-template-columns:1fr}}</style><link rel="stylesheet" href="profile-photos.css"></head><body>
 <header><h1>♡ Pacific Hearts</h1><div>Free for Filipinas and Americans · <a href="index.html" style="color:white">Homepage</a></div></header><main>
 <p class="note">Pacific Hearts member accounts. Profiles and profile photos are visible to signed-in members.</p>
-<section class="card" id="authBox"><h2 id="authHeading">Create an account / Sign in</h2><label>Email<input id="email" type="email" autocomplete="email"></label><label>Password<input id="password" type="password" autocomplete="new-password" minlength="8"></label><button id="signup" type="button">Create account</button><button id="signin" type="button">Sign in</button><button id="resend" type="button">Resend confirmation email</button><p id="authStatus" role="status" aria-live="polite"></p><p class="note">Supabase may require you to confirm your email before signing in. Never send passwords to anyone.</p></section>
+<section class="card" id="authBox"><h2 id="authHeading">Create an account / Sign in</h2><label>Email<input id="email" type="email" autocomplete="email"></label><label>Password<input id="password" type="password" autocomplete="new-password" minlength="8"></label><button id="signup" type="button">Create account</button><button id="signin" type="button">Sign in</button><button id="forgotPassword" type="button">Forgot password?</button><button id="resend" type="button">Resend confirmation email</button><p id="authStatus" role="status" aria-live="polite"></p><p class="note">Supabase may require you to confirm your email before signing in. Never send passwords to anyone.</p></section>
+<section class="card hidden" id="recoveryBox" aria-labelledby="recoveryHeading">
+<h2 id="recoveryHeading">Choose a new password</h2>
+<p id="recoveryStatus" role="status" aria-live="polite">Checking your password reset link…</p>
+<form id="recoveryForm" class="hidden">
+<label>New password<input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+<label>Confirm new password<input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+<button id="savePassword" type="submit">Update password</button>
+</form>
+<a href="register.html?mode=signin">Back to sign in</a>
+</section>
 <section class="card hidden" id="memberBox"><h2>Your member profile</h2><p id="who"></p><button id="signout">Sign out</button> <a href="messages.html">Messages</a>
 <form id="profileForm"><div class="two"><label>Display name<input name="display_name" maxlength="60" required></label><label>Age (18+)<input name="age" type="number" min="18" max="120" required></label>
 <label>Country<select name="country"><option>Philippines</option><option>United States</option></select></label><label>City<input name="city" maxlength="80"></label>
@@ -40,6 +50,9 @@ if (accountMode === "signin") {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="profile-photos.js"></script>
 <script>
+const recoveryParams = new URLSearchParams(location.hash.slice(1));
+const recoveryLinkFailed = recoveryParams.has("error") && recoveryParams.get("error_code") === "otp_expired";
+let recovering = recoveryParams.get("type") === "recovery" || recoveryLinkFailed;
 const client=window.supabase.createClient("https://oydhphpbcsiedfkkwujq.supabase.co","sb_publishable_HjB_yE3s66LO8FsS4n2iGw_Jh73wk-m");
 const $=id=>document.getElementById(id),status=(id,msg,bad=false)=>{let x=$(id);x.textContent=msg;x.className=bad?"error":"ok"};
 const profilePhotos = setupProfilePhotos(client);
@@ -48,9 +61,10 @@ let authRequest = 0;
 let searchRequest = 0;
 
 async function refresh() {
+  if (recovering) return;
   const request = ++authRequest;
   const { data: { user } } = await client.auth.getUser();
-  if (request !== authRequest) return;
+  if (recovering || request !== authRequest) return;
   const id = user?.id ?? null;
   if (id !== currentMember) {
     ++searchRequest;
@@ -107,6 +121,71 @@ $("signin").onclick=async()=>{
   }catch(e){status("authStatus","Sign-in failed: "+(e?.message||"Network error"),true)}
   finally{$("signin").disabled=false}
 };
+$("forgotPassword").onclick = async () => {
+  const email = $("email").value.trim();
+  if (!email || !$("email").checkValidity()) {
+    status("authStatus", "Enter the email address you used to create your account, then tap Forgot password again.", true);
+    $("email").focus();
+    return;
+  }
+  $("forgotPassword").disabled = true;
+  status("authStatus", "Requesting a password reset email…");
+  try {
+    const redirectTo = location.origin + location.pathname;
+    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error && error.code !== "user_not_found") throw error;
+    status("authStatus", "If an account can receive email at that address, check your inbox and spam folder for a password reset link.");
+  } catch (error) {
+    const message = error.status === 429
+      ? "Too many email requests. Wait a few minutes and try again."
+      : "The password reset email could not be requested. Try again shortly.";
+    status("authStatus", message, true);
+  } finally {
+    $("forgotPassword").disabled = false;
+  }
+};
+
+function showRecovery() {
+  recovering = true;
+  for (const id of ["authBox", "memberBox", "searchBox"]) $(id).classList.add("hidden");
+  $("recoveryBox").classList.remove("hidden");
+}
+
+$("recoveryForm").onsubmit = async event => {
+  event.preventDefault();
+  const password = $("newPassword").value;
+  if (password !== $("confirmPassword").value) {
+    status("recoveryStatus", "The passwords do not match.", true);
+    return;
+  }
+
+  $("savePassword").disabled = true;
+  status("recoveryStatus", "Updating your password…");
+  try {
+    const { error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+    event.target.reset();
+    event.target.classList.add("hidden");
+    status("recoveryStatus", "Your password was updated.");
+    const { error: signOutError } = await client.auth.signOut({ scope: "local" });
+    if (!signOutError) {
+      history.replaceState(null, "", "register.html?mode=signin");
+      $("recoveryBox").classList.add("hidden");
+      $("authBox").classList.remove("hidden");
+      authHeading.textContent = "Sign in to Pacific Hearts";
+      $("password").autocomplete = "current-password";
+      $("signup").before($("signin"));
+      recovering = false;
+      status("authStatus", "Password updated. Sign in with your new password.");
+      $("email").focus();
+    }
+  } catch (error) {
+    status("recoveryStatus", error.message || "The password could not be updated. Try again.", true);
+  } finally {
+    $("savePassword").disabled = false;
+  }
+};
+
 $("resend").onclick=async()=>{
   const email=$("email").value.trim();
   if(!email||!$("email").checkValidity()){status("authStatus","Enter a valid email address to resend confirmation.",true);return}
@@ -191,9 +270,31 @@ $("search").onclick = async () => {
   }
 };
 client.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    showRecovery();
+    $("recoveryForm").classList.remove("hidden");
+    status("recoveryStatus", "Enter and confirm your new password.");
+    $("newPassword").focus();
+    return;
+  }
+  if (recovering && (event === "INITIAL_SESSION" || event === "SIGNED_OUT")) {
+    if (!session) {
+      $("recoveryForm").classList.add("hidden");
+      status("recoveryStatus", "This password reset link is invalid or has expired. Go back to sign in and request a new link.", true);
+    }
+    return;
+  }
   if (event === "SIGNED_OUT" || (event === "SIGNED_IN" && session?.user.id !== currentMember)) {
     setTimeout(refresh, 0);
   }
 });
-refresh();
+if (recovering || recoveryLinkFailed) {
+  showRecovery();
+  if (recoveryLinkFailed) {
+    history.replaceState(null, "", location.pathname + location.search);
+    status("recoveryStatus", "This link is invalid or has expired. Go back to sign in and request a new link.", true);
+  }
+} else {
+  refresh();
+}
 </script></body></html>
