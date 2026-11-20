@@ -17,7 +17,7 @@ create table public.ph_membership_plans (
   price_approved boolean not null default false,
   check(not price_approved or price_usd is not null)
 );
-insert into public.ph_membership_plans values ('monthly',1,9.99,true),('three_month',3,null,false),('annual',12,null,false);
+insert into public.ph_membership_plans values ('monthly',1,9.99,true),('three_month',3,26.99,true),('annual',12,89.99,true);
 alter table public.ph_membership_plans enable row level security;
 revoke all on public.ph_membership_plans from public, anon, authenticated;
 grant select on public.ph_membership_plans to anon, authenticated;

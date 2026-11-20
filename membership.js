@@ -2,7 +2,7 @@
 const membershipClient = window.supabase?.createClient('https://oydhphpbcsiedfkkwujq.supabase.co','sb_publishable_HjB_yE3s66LO8FsS4n2iGw_Jh73wk-m');
 const getMembershipElement = id => document.getElementById(id);
 let membershipRevision = 0;
-const planNames = {monthly:'Monthly',three_month:'Three months',annual:'Annual'};
+const planNames = {monthly:'Monthly — $9.99 USD',three_month:'Three months — $26.99 USD',annual:'Annual — $89.99 USD'};
 async function loadMembership() {
   const revision = ++membershipRevision;
   getMembershipElement('plan-form').hidden = true;
